@@ -43,149 +43,175 @@ async function getPageContent(pageId) {
   let content = '';
   
   for (const block of blocks.results) {
-    switch (block.type) {
-      case 'paragraph':
-        if (block.paragraph.rich_text.length > 0) {
-          content += extractTextFromRichText(block.paragraph.rich_text) + '\n\n';
-        } else {
-          content += '\n'; // Párrafo vacío
-        }
-        break;
-        
-      case 'heading_1':
-        if (block.heading_1.rich_text.length > 0) {
-          content += '# ' + extractTextFromRichText(block.heading_1.rich_text) + '\n\n';
-        }
-        break;
-        
-      case 'heading_2':
-        if (block.heading_2.rich_text.length > 0) {
-          content += '## ' + extractTextFromRichText(block.heading_2.rich_text) + '\n\n';
-        }
-        break;
-        
-      case 'heading_3':
-        if (block.heading_3.rich_text.length > 0) {
-          content += '### ' + extractTextFromRichText(block.heading_3.rich_text) + '\n\n';
-        }
-        break;
-        
-      case 'bulleted_list_item':
-        if (block.bulleted_list_item.rich_text.length > 0) {
-          content += '- ' + extractTextFromRichText(block.bulleted_list_item.rich_text) + '\n';
-        }
-        break;
-        
-      case 'numbered_list_item':
-        if (block.numbered_list_item.rich_text.length > 0) {
-          content += '1. ' + extractTextFromRichText(block.numbered_list_item.rich_text) + '\n';
-        }
-        break;
-        
-      case 'code':
-        const language = block.code.language || '';
-        const codeText = extractTextFromRichText(block.code.rich_text);
-        content += `\`\`\`${language}\n${codeText}\n\`\`\`\n\n`;
-        break;
-        
-      case 'quote':
-        if (block.quote.rich_text.length > 0) {
-          content += '> ' + extractTextFromRichText(block.quote.rich_text) + '\n\n';
-        }
-        break;
-        
-      case 'callout':
-        if (block.callout.rich_text.length > 0) {
-          const emoji = block.callout.icon?.emoji || '💡';
-          content += `${emoji} **${extractTextFromRichText(block.callout.rich_text)}**\n\n`;
-        }
-        break;
-        
-      case 'divider':
-        content += '---\n\n';
-        break;
-        
-      case 'image':
-        let imageUrl = '';
-        if (block.image.type === 'external') {
-          imageUrl = block.image.external.url;
-        } else if (block.image.type === 'file') {
-          imageUrl = block.image.file.url;
-        }
-        
-        if (imageUrl) {
-          const caption = block.image.caption.length > 0 
-            ? extractTextFromRichText(block.image.caption) 
-            : '';
-          content += `![${caption}](${imageUrl})\n`;
-          if (caption) content += `*${caption}*\n`;
-          content += '\n';
-        }
-        break;
-        
-      case 'video':
-        let videoUrl = '';
-        if (block.video.type === 'external') {
-          videoUrl = block.video.external.url;
-        } else if (block.video.type === 'file') {
-          videoUrl = block.video.file.url;
-        }
-        
-        if (videoUrl) {
-          // Para videos de YouTube, Vimeo, etc.
-          if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
-            content += `{% youtube ${videoUrl} %}\n\n`;
-          } else if (videoUrl.includes('vimeo.com')) {
-            content += `{% vimeo ${videoUrl} %}\n\n`;
+    try {
+      switch (block.type) {
+        case 'paragraph':
+          if (block.paragraph.rich_text.length > 0) {
+            content += extractTextFromRichText(block.paragraph.rich_text) + '\n\n';
           } else {
-            content += `[🎥 Video](${videoUrl})\n\n`;
+            content += '\n'; // Párrafo vacío
           }
-        }
-        break;
-        
-      case 'embed':
-        if (block.embed.url) {
-          const embedUrl = block.embed.url;
+          break;
           
-          // Detectar tipo de embed
-          if (embedUrl.includes('twitter.com') || embedUrl.includes('x.com')) {
-            content += `{% twitter ${embedUrl} %}\n\n`;
-          } else if (embedUrl.includes('codepen.io')) {
-            content += `{% codepen ${embedUrl} %}\n\n`;
-          } else if (embedUrl.includes('github.com')) {
-            content += `{% github ${embedUrl} %}\n\n`;
-          } else {
-            content += `[🔗 ${embedUrl}](${embedUrl})\n\n`;
+        case 'heading_1':
+          if (block.heading_1.rich_text.length > 0) {
+            content += '# ' + extractTextFromRichText(block.heading_1.rich_text) + '\n\n';
           }
-        }
-        break;
-        
-      case 'bookmark':
-        if (block.bookmark.url) {
-          const caption = block.bookmark.caption.length > 0 
-            ? extractTextFromRichText(block.bookmark.caption)
-            : 'Link';
-          content += `[${caption}](${block.bookmark.url})\n\n`;
-        }
-        break;
-        
-      case 'link_preview':
-        if (block.link_preview.url) {
-          content += `[${block.link_preview.url}](${block.link_preview.url})\n\n`;
-        }
-        break;
-        
-      case 'table':
-        // Las tablas requieren procesamiento adicional de filas
-        content += '| | |\n|---|---|\n'; // Tabla básica
-        break;
-        
-      default:
-        // Para tipos no soportados, intentar extraer texto si existe
-        if (block[block.type]?.rich_text) {
-          content += extractTextFromRichText(block[block.type].rich_text) + '\n\n';
-        }
-        console.log(`⚠️  Tipo de bloque no soportado: ${block.type}`);
+          break;
+          
+        case 'heading_2':
+          if (block.heading_2.rich_text.length > 0) {
+            content += '## ' + extractTextFromRichText(block.heading_2.rich_text) + '\n\n';
+          }
+          break;
+          
+        case 'heading_3':
+          if (block.heading_3.rich_text.length > 0) {
+            content += '### ' + extractTextFromRichText(block.heading_3.rich_text) + '\n\n';
+          }
+          break;
+          
+        case 'bulleted_list_item':
+          if (block.bulleted_list_item.rich_text.length > 0) {
+            content += '- ' + extractTextFromRichText(block.bulleted_list_item.rich_text) + '\n';
+          }
+          break;
+          
+        case 'numbered_list_item':
+          if (block.numbered_list_item.rich_text.length > 0) {
+            content += '1. ' + extractTextFromRichText(block.numbered_list_item.rich_text) + '\n';
+          }
+          break;
+          
+        case 'code':
+          const language = block.code.language || '';
+          const codeText = extractTextFromRichText(block.code.rich_text);
+          content += `\`\`\`${language}\n${codeText}\n\`\`\`\n\n`;
+          break;
+          
+        case 'quote':
+          if (block.quote.rich_text.length > 0) {
+            content += '> ' + extractTextFromRichText(block.quote.rich_text) + '\n\n';
+          }
+          break;
+          
+        case 'callout':
+          if (block.callout.rich_text.length > 0) {
+            const emoji = block.callout.icon?.emoji || '💡';
+            content += `${emoji} **${extractTextFromRichText(block.callout.rich_text)}**\n\n`;
+          }
+          break;
+          
+        case 'divider':
+          content += '---\n\n';
+          break;
+          
+        case 'image':
+          let imageUrl = '';
+          if (block.image.type === 'external') {
+            imageUrl = block.image.external.url;
+          } else if (block.image.type === 'file') {
+            imageUrl = block.image.file.url;
+          }
+          
+          if (imageUrl) {
+            const caption = block.image.caption.length > 0 
+              ? extractTextFromRichText(block.image.caption) 
+              : '';
+            content += `![${caption}](${imageUrl})\n`;
+            if (caption) content += `*${caption}*\n`;
+            content += '\n';
+          }
+          break;
+          
+        case 'video':
+          let videoUrl = '';
+          if (block.video.type === 'external') {
+            videoUrl = block.video.external.url;
+          } else if (block.video.type === 'file') {
+            videoUrl = block.video.file.url;
+          }
+          
+          if (videoUrl) {
+            // Para videos de YouTube, Vimeo, etc.
+            if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+              content += `{% youtube ${videoUrl} %}\n\n`;
+            } else if (videoUrl.includes('vimeo.com')) {
+              content += `{% vimeo ${videoUrl} %}\n\n`;
+            } else {
+              content += `[🎥 Video](${videoUrl})\n\n`;
+            }
+          }
+          break;
+          
+        case 'embed':
+          if (block.embed.url) {
+            const embedUrl = block.embed.url;
+            
+            // Detectar tipo de embed
+            if (embedUrl.includes('twitter.com') || embedUrl.includes('x.com')) {
+              content += `{% twitter ${embedUrl} %}\n\n`;
+            } else if (embedUrl.includes('codepen.io')) {
+              content += `{% codepen ${embedUrl} %}\n\n`;
+            } else if (embedUrl.includes('github.com')) {
+              content += `{% github ${embedUrl} %}\n\n`;
+            } else {
+              content += `[🔗 ${embedUrl}](${embedUrl})\n\n`;
+            }
+          }
+          break;
+          
+        case 'bookmark':
+          if (block.bookmark.url) {
+            const caption = block.bookmark.caption.length > 0 
+              ? extractTextFromRichText(block.bookmark.caption)
+              : 'Link';
+            content += `[${caption}](${block.bookmark.url})\n\n`;
+          }
+          break;
+          
+        case 'link_preview':
+          if (block.link_preview.url) {
+            content += `[${block.link_preview.url}](${block.link_preview.url})\n\n`;
+          }
+          break;
+          
+        case 'link_to_page':
+          // Omitir enlaces a páginas internas de Notion
+          console.log(`⚠️  Enlace a página interna omitido`);
+          break;
+          
+        case 'file':
+          if (block.file) {
+            let fileUrl = '';
+            if (block.file.type === 'external') {
+              fileUrl = block.file.external.url;
+            } else if (block.file.type === 'file') {
+              fileUrl = block.file.file.url;
+            }
+            
+            if (fileUrl) {
+              const fileName = block.file.name || 'Archivo';
+              content += `[📎 ${fileName}](${fileUrl})\n\n`;
+            }
+          }
+          break;
+          
+        case 'table':
+          // Las tablas requieren procesamiento adicional de filas
+          content += '| | |\n|---|---|\n'; // Tabla básica
+          break;
+          
+        default:
+          // Para tipos no soportados, intentar extraer texto si existe
+          if (block[block.type]?.rich_text) {
+            content += extractTextFromRichText(block[block.type].rich_text) + '\n\n';
+          }
+          console.log(`⚠️  Tipo de bloque no soportado: ${block.type}`);
+      }
+    } catch (error) {
+      console.log(`⚠️  Error procesando bloque ${block.type}, omitiendo: ${error.message}`);
+      // Continúa con el siguiente bloque
     }
   }
   
@@ -274,9 +300,19 @@ async function main() {
         // Actualizar artículo existente
         const articleId = extractArticleIdFromUrl(existingUrl);
         if (articleId) {
-          console.log(`🔄 Actualizando artículo existente: ${title}`);
-          devtoArticle = await updateDevToArticle(articleId, title, content, []);
-          console.log(`✅ Actualizado: ${title} -> ${existingUrl}`);
+          try {
+            console.log(`🔄 Actualizando artículo existente: ${title}`);
+            devtoArticle = await updateDevToArticle(articleId, title, content, []);
+            console.log(`✅ Actualizado: ${title} -> ${existingUrl}`);
+          } catch (error) {
+            if (error.response?.status === 404) {
+              console.log(`⚠️  Artículo no encontrado en Dev.to, creando nuevo: ${title}`);
+              devtoArticle = await publishToDevTo(title, content, []);
+              console.log(`✅ Publicado (nuevo): ${title} -> ${devtoArticle.url}`);
+            } else {
+              throw error;
+            }
+          }
         } else {
           console.log(`⚠️  No se pudo extraer ID del artículo, creando nuevo: ${title}`);
           devtoArticle = await publishToDevTo(title, content, []);
