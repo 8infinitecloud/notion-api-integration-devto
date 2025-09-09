@@ -281,6 +281,15 @@ async function publishToDevTo(title, content, tags = []) {
   }
 }
 
+async function deleteDevToArticle(articleId) {
+  await axios.delete(`https://dev.to/api/articles/${articleId}`, {
+    headers: {
+      'api-key': devtoApiKey,
+      'Content-Type': 'application/json'
+    }
+  });
+}
+
 async function updateDevToArticle(articleId, title, content, tags = []) {
   const article = {
     article: {
@@ -346,27 +355,22 @@ async function main() {
       let devtoArticle;
       
       if (existingUrl) {
-        // Actualizar artículo existente
+        // Eliminar artículo existente y crear uno nuevo
         const articleId = extractArticleIdFromUrl(existingUrl);
         if (articleId) {
           try {
-            console.log(`🔄 Actualizando artículo existente: ${title}`);
-            devtoArticle = await updateDevToArticle(articleId, title, content, []);
-            console.log(`✅ Actualizado: ${title} -> ${existingUrl}`);
+            console.log(`🗑️  Eliminando artículo anterior: ${title}`);
+            await deleteDevToArticle(articleId);
+            console.log(`✅ Artículo eliminado`);
           } catch (error) {
-            if (error.response?.status === 404) {
-              console.log(`⚠️  Artículo no encontrado en Dev.to, creando nuevo: ${title}`);
-              devtoArticle = await publishToDevTo(title, content, []);
-              console.log(`✅ Publicado (nuevo): ${title} -> ${devtoArticle.url}`);
-            } else {
-              throw error;
-            }
+            console.log(`⚠️  No se pudo eliminar el artículo anterior (puede que ya no exista)`);
           }
-        } else {
-          console.log(`⚠️  No se pudo extraer ID del artículo, creando nuevo: ${title}`);
-          devtoArticle = await publishToDevTo(title, content, []);
-          console.log(`✅ Publicado (nuevo): ${title} -> ${devtoArticle.url}`);
         }
+        
+        // Crear nuevo artículo
+        console.log(`📝 Creando nuevo artículo: ${title}`);
+        devtoArticle = await publishToDevTo(title, content, []);
+        console.log(`✅ Publicado (reemplazado): ${title} -> ${devtoArticle.url}`);
       } else {
         // Crear nuevo artículo
         console.log(`📝 Creando nuevo artículo: ${title}`);
