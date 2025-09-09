@@ -1,6 +1,6 @@
 # Notion to Dev.to Integration
 
-Automatiza la publicación de artículos desde Notion hacia Dev.to. Este script busca páginas marcadas como "Published" en tu base de datos de Notion y las publica automáticamente en Dev.to como borradores.
+Automatiza la publicación de artículos desde Notion hacia Dev.to. Este script busca páginas marcadas como "Done" en tu base de datos de Notion y las publica automáticamente en Dev.to como borradores, convirtiendo el contenido rico de Notion a Markdown.
 
 ## Requisitos Previos
 
@@ -67,15 +67,55 @@ Tu base de datos debe tener exactamente estas propiedades:
 | Propiedad | Tipo | Opciones | Descripción |
 |-----------|------|----------|-------------|
 | **Title** | Title | - | Título del artículo |
-| **Status** | Select | "Draft", "Published", "Posted" | Estado de publicación |
+| **Status** | Status | "Backlog", "Done", "Published" | Estado de publicación |
 | **Tags** | Multi-select | - | Tags para Dev.to (opcional) |
 | **Dev.to URL** | URL | - | Se llena automáticamente tras publicar |
 
 ### Flujo de estados:
 
-1. **Draft** → Artículo en borrador
-2. **Published** → Listo para publicar en Dev.to
-3. **Posted** → Ya publicado en Dev.to (se asigna automáticamente)
+1. **Backlog** → Artículo en desarrollo
+2. **Done** → Listo para publicar en Dev.to
+3. **Published** → Ya publicado en Dev.to (se asigna automáticamente)
+
+## Tipos de Contenido Soportados
+
+### ✅ Contenido de Texto
+- **Párrafos** → Texto normal con formato
+- **Heading 1, 2, 3** → `# ## ###` 
+- **Texto en negrita** → `**texto**`
+- **Texto en cursiva** → `*texto*`
+- **Código inline** → `\`código\``
+- **Tachado** → `~~texto~~`
+- **Enlaces** → `[texto](url)`
+
+### ✅ Listas
+- **Listas con viñetas** → `- item`
+- **Listas numeradas** → `1. item`
+
+### ✅ Bloques Especiales
+- **Bloques de código** → `\`\`\`language\ncode\n\`\`\``
+- **Citas** → `> texto`
+- **Callouts** → `💡 **texto**`
+- **Divisores** → `---`
+
+### ✅ Multimedia
+- **Imágenes** → `![alt](url)` con caption
+- **Videos de YouTube** → `{% youtube url %}`
+- **Videos de Vimeo** → `{% vimeo url %}`
+- **Otros videos** → `[🎥 Video](url)`
+
+### ✅ Contenido Embebido
+- **Twitter/X** → `{% twitter url %}`
+- **CodePen** → `{% codepen url %}`
+- **GitHub** → `{% github url %}`
+- **Bookmarks** → `[título](url)`
+- **Link previews** → `[url](url)`
+
+### ⚠️ Limitaciones
+- **Tablas** → Conversión básica (requiere mejoras)
+- **Bases de datos anidadas** → No soportado
+- **Archivos** → Solo URLs públicas
+- **Fórmulas** → No soportado
 
 ## Uso
 
@@ -83,8 +123,9 @@ Tu base de datos debe tener exactamente estas propiedades:
 
 1. **Prepara tu contenido en Notion:**
    - Escribe tu artículo en una página de la base de datos
+   - Usa cualquier tipo de contenido soportado
    - Asegúrate de que tenga un título
-   - Cambia el Status a "Published"
+   - Cambia el Status a "Done"
    - Opcionalmente, agrega tags
 
 2. **Ejecuta el script:**
@@ -93,10 +134,10 @@ Tu base de datos debe tener exactamente estas propiedades:
    ```
 
 3. **El script automáticamente:**
-   - Busca páginas con status "Published"
-   - Convierte el contenido a Markdown
+   - Busca páginas con status "Done"
+   - Convierte todo el contenido a Markdown
    - Publica en Dev.to como borrador
-   - Actualiza el status a "Posted"
+   - Actualiza el status a "Published"
    - Guarda la URL de Dev.to en la base de datos
 
 ### Desarrollo
@@ -106,29 +147,25 @@ Para desarrollo con auto-reload:
 npm run dev
 ```
 
-## Tipos de Contenido Soportados
-
-El script actualmente convierte:
-- **Párrafos** → Texto normal
-- **Heading 1** → `# Título`
-- **Heading 2** → `## Subtítulo`
-
 ## Mensajes del Sistema
 
-- `🔍 Buscando páginas con status "Published"...`
+- `🔍 Buscando páginas con status "Done"...`
 - `ℹ️ No se encontraron páginas para publicar` - No hay artículos listos
 - `📝 Encontradas X páginas para publicar` - Se encontraron artículos
 - `📤 Publicando: [título]` - Procesando artículo
 - `✅ Publicado: [título] -> [url]` - Artículo publicado exitosamente
 - `🎉 Proceso completado. X artículos publicados` - Proceso terminado
 - `❌ Error durante la publicación: [error]` - Error en el proceso
+- `⚠️ Tipo de bloque no soportado: [tipo]` - Contenido no convertible
 
 ## Notas Importantes
 
 - Los artículos se publican como **borradores** en Dev.to
 - Debes revisar y publicar manualmente desde Dev.to
 - El script no sobrescribe artículos ya publicados
-- Solo procesa páginas con status "Published"
+- Solo procesa páginas con status "Done"
+- Las imágenes deben ser públicamente accesibles
+- Los embeds usan la sintaxis específica de Dev.to
 
 ## Solución de Problemas
 
@@ -144,11 +181,19 @@ El script actualmente convierte:
 - Verifica tu API key de Dev.to
 - Asegúrate de que tenga permisos de escritura
 
+### Imágenes no se muestran
+- Verifica que las URLs de las imágenes sean públicas
+- Las imágenes de Notion tienen URLs temporales
+
+### Embeds no funcionan
+- Verifica que uses la sintaxis correcta de Dev.to
+- Algunos embeds requieren URLs específicas
+
 ## Estructura del Proyecto
 
 ```
 notion-api-integration-devto/
-├── index.js          # Script principal
+├── index.js          # Script principal con conversión de contenido
 ├── package.json      # Dependencias
 ├── .env.example      # Plantilla de variables de entorno
 ├── .env              # Variables de entorno (no incluido en git)
@@ -165,3 +210,10 @@ Si encuentras bugs o quieres agregar funcionalidades:
 2. Fork el repositorio
 3. Crea una rama para tu feature
 4. Envía un pull request
+
+### Tipos de contenido pendientes por implementar:
+- Tablas complejas
+- Bases de datos anidadas
+- Archivos adjuntos
+- Fórmulas de Notion
+- Sincronización bidireccional
