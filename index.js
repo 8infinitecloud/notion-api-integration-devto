@@ -11,7 +11,7 @@ async function getNotionPages() {
     database_id: databaseId,
     filter: {
       property: 'Status',
-      select: { equals: 'Ready to Publish' }
+      select: { equals: 'Published' }
     }
   });
   return response.results;
@@ -58,7 +58,7 @@ async function updateNotionStatus(pageId, devtoUrl) {
   await notion.pages.update({
     page_id: pageId,
     properties: {
-      'Status': { select: { name: 'Published' } },
+      'Status': { select: { name: 'Posted' } },
       'Dev.to URL': { url: devtoUrl }
     }
   });
@@ -66,21 +66,34 @@ async function updateNotionStatus(pageId, devtoUrl) {
 
 async function main() {
   try {
+    console.log('🔍 Buscando páginas con status "Published"...');
     const pages = await getNotionPages();
+    
+    if (pages.length === 0) {
+      console.log('ℹ️  No se encontraron páginas para publicar');
+      return;
+    }
+
+    console.log(`📝 Encontradas ${pages.length} páginas para publicar`);
     
     for (const page of pages) {
       const title = page.properties.Title?.title?.[0]?.plain_text || 'Untitled';
       const tags = page.properties.Tags?.multi_select?.map(tag => tag.name) || [];
+      
+      console.log(`📤 Publicando: ${title}`);
       
       const content = await getPageContent(page.id);
       const devtoArticle = await publishToDevTo(title, content, tags);
       
       await updateNotionStatus(page.id, devtoArticle.url);
       
-      console.log(`Published: ${title} -> ${devtoArticle.url}`);
+      console.log(`✅ Publicado: ${title} -> ${devtoArticle.url}`);
     }
+    
+    console.log(`🎉 Proceso completado. ${pages.length} artículos publicados`);
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('❌ Error durante la publicación:', error.message);
+    process.exit(1);
   }
 }
 

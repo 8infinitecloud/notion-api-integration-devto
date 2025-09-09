@@ -1,6 +1,6 @@
 # Notion to Dev.to Integration
 
-Automatiza la publicación de artículos desde Notion hacia Dev.to. Este script busca páginas marcadas como "Ready to Publish" en tu base de datos de Notion y las publica automáticamente en Dev.to como borradores.
+Automatiza la publicación de artículos desde Notion hacia Dev.to. Este script busca páginas marcadas como "Published" en tu base de datos de Notion y las publica automáticamente en Dev.to como borradores.
 
 ## Requisitos Previos
 
@@ -67,17 +67,15 @@ Tu base de datos debe tener exactamente estas propiedades:
 | Propiedad | Tipo | Opciones | Descripción |
 |-----------|------|----------|-------------|
 | **Title** | Title | - | Título del artículo |
-| **Status** | Select | "Ready to Publish", "Published" | Estado de publicación |
+| **Status** | Select | "Draft", "Published", "Posted" | Estado de publicación |
 | **Tags** | Multi-select | - | Tags para Dev.to (opcional) |
 | **Dev.to URL** | URL | - | Se llena automáticamente tras publicar |
 
-### Ejemplo de configuración:
+### Flujo de estados:
 
-1. Crea una nueva base de datos en Notion
-2. Agrega las propiedades mencionadas arriba
-3. Para la propiedad "Status", crea las opciones:
-   - "Ready to Publish" (para artículos listos)
-   - "Published" (se asigna automáticamente)
+1. **Draft** → Artículo en borrador
+2. **Published** → Listo para publicar en Dev.to
+3. **Posted** → Ya publicado en Dev.to (se asigna automáticamente)
 
 ## Uso
 
@@ -86,7 +84,7 @@ Tu base de datos debe tener exactamente estas propiedades:
 1. **Prepara tu contenido en Notion:**
    - Escribe tu artículo en una página de la base de datos
    - Asegúrate de que tenga un título
-   - Cambia el Status a "Ready to Publish"
+   - Cambia el Status a "Published"
    - Opcionalmente, agrega tags
 
 2. **Ejecuta el script:**
@@ -95,10 +93,10 @@ Tu base de datos debe tener exactamente estas propiedades:
    ```
 
 3. **El script automáticamente:**
-   - Busca páginas con status "Ready to Publish"
+   - Busca páginas con status "Published"
    - Convierte el contenido a Markdown
    - Publica en Dev.to como borrador
-   - Actualiza el status a "Published"
+   - Actualiza el status a "Posted"
    - Guarda la URL de Dev.to en la base de datos
 
 ### Desarrollo
@@ -115,12 +113,22 @@ El script actualmente convierte:
 - **Heading 1** → `# Título`
 - **Heading 2** → `## Subtítulo`
 
+## Mensajes del Sistema
+
+- `🔍 Buscando páginas con status "Published"...`
+- `ℹ️ No se encontraron páginas para publicar` - No hay artículos listos
+- `📝 Encontradas X páginas para publicar` - Se encontraron artículos
+- `📤 Publicando: [título]` - Procesando artículo
+- `✅ Publicado: [título] -> [url]` - Artículo publicado exitosamente
+- `🎉 Proceso completado. X artículos publicados` - Proceso terminado
+- `❌ Error durante la publicación: [error]` - Error en el proceso
+
 ## Notas Importantes
 
 - Los artículos se publican como **borradores** en Dev.to
 - Debes revisar y publicar manualmente desde Dev.to
 - El script no sobrescribe artículos ya publicados
-- Solo procesa páginas con status "Ready to Publish"
+- Solo procesa páginas con status "Published"
 
 ## Solución de Problemas
 
@@ -144,6 +152,9 @@ notion-api-integration-devto/
 ├── package.json      # Dependencias
 ├── .env.example      # Plantilla de variables de entorno
 ├── .env              # Variables de entorno (no incluido en git)
+├── .github/
+│   └── workflows/
+│       └── publish.yml # GitHub Actions
 └── README.md         # Este archivo
 ```
 
