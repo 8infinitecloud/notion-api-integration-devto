@@ -11,7 +11,7 @@ async function getNotionPages() {
     database_id: databaseId,
     filter: {
       property: 'Status',
-      select: { equals: 'Published' }
+      status: { equals: 'Published' }
     }
   });
   return response.results;
@@ -58,8 +58,7 @@ async function updateNotionStatus(pageId, devtoUrl) {
   await notion.pages.update({
     page_id: pageId,
     properties: {
-      'Status': { select: { name: 'Posted' } },
-      'Dev.to URL': { url: devtoUrl }
+      'Status': { status: { name: 'Posted' } }
     }
   });
 }
@@ -78,12 +77,11 @@ async function main() {
     
     for (const page of pages) {
       const title = page.properties.Title?.title?.[0]?.plain_text || 'Untitled';
-      const tags = page.properties.Tags?.multi_select?.map(tag => tag.name) || [];
       
       console.log(`📤 Publicando: ${title}`);
       
       const content = await getPageContent(page.id);
-      const devtoArticle = await publishToDevTo(title, content, tags);
+      const devtoArticle = await publishToDevTo(title, content, []);
       
       await updateNotionStatus(page.id, devtoArticle.url);
       
