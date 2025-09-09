@@ -220,9 +220,9 @@ async function getPageContent(pageId) {
 
 function extractArticleIdFromUrl(devtoUrl) {
   // Extraer ID del artículo de la URL de Dev.to
-  // Ejemplo: https://dev.to/username/title-123 -> 123
-  const match = devtoUrl.match(/\/([^\/]+)-(\d+)$/);
-  return match ? match[2] : null;
+  // Ejemplo: https://dev.to/username/title-37la-temp-slug-2871134 -> 2871134
+  const match = devtoUrl.match(/-(\d+)$/);
+  return match ? match[1] : null;
 }
 
 async function publishToDevTo(title, content, tags = []) {
@@ -357,13 +357,16 @@ async function main() {
       if (existingUrl) {
         // Eliminar artículo existente y crear uno nuevo
         const articleId = extractArticleIdFromUrl(existingUrl);
+        console.log(`🔍 URL existente: ${existingUrl}`);
+        console.log(`🔍 ID extraído: ${articleId}`);
+        
         if (articleId) {
           try {
             console.log(`🗑️  Eliminando artículo anterior: ${title}`);
             await deleteDevToArticle(articleId);
             console.log(`✅ Artículo eliminado`);
           } catch (error) {
-            console.log(`⚠️  No se pudo eliminar el artículo anterior (puede que ya no exista)`);
+            console.log(`⚠️  No se pudo eliminar el artículo anterior:`, error.response?.status, error.response?.statusText);
           }
         }
         
