@@ -192,6 +192,13 @@ async function getPageContent(pageId) {
   return content.trim();
 }
 
+function extractArticleIdFromUrl(devtoUrl) {
+  // Extraer ID del artículo de la URL de Dev.to
+  // Ejemplo: https://dev.to/username/title-123 -> 123
+  const match = devtoUrl.match(/\/([^\/]+)-(\d+)$/);
+  return match ? match[2] : null;
+}
+
 async function publishToDevTo(title, content, tags = []) {
   const article = {
     article: {
@@ -212,11 +219,31 @@ async function publishToDevTo(title, content, tags = []) {
   return response.data;
 }
 
+async function updateDevToArticle(articleId, title, content, tags = []) {
+  const article = {
+    article: {
+      title,
+      body_markdown: content,
+      tags
+    }
+  };
+
+  const response = await axios.put(`https://dev.to/api/articles/${articleId}`, article, {
+    headers: {
+      'api-key': devtoApiKey,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  return response.data;
+}
+
 async function updateNotionStatus(pageId, devtoUrl) {
   await notion.pages.update({
     page_id: pageId,
     properties: {
-      'Status': { status: { name: 'Published' } }
+      'Status': { status: { name: 'Published' } },
+      'URL': { url: devtoUrl }
     }
   });
 }
@@ -235,18 +262,37 @@ async function main() {
     
     for (const page of pages) {
       const title = page.properties.Title?.title?.[0]?.plain_text || 'Untitled';
+      const existingUrl = page.properties.URL?.url;
       
-      console.log(`📤 Publicando: ${title}`);
+      console.log(`📤 Procesando: ${title}`);
       
       const content = await getPageContent(page.id);
-      const devtoArticle = await publishToDevTo(title, content, []);
+      
+      let devtoArticle;
+      
+      if (existingUrl) {
+        // Actualizar artículo existente
+        const articleId = extractArticleIdFromUrl(existingUrl);
+        if (articleId) {
+          console.log(`🔄 Actualizando artículo existente: ${title}`);
+          devtoArticle = await updateDevToArticle(articleId, title, content, []);
+          console.log(`✅ Actualizado: ${title} -> ${existingUrl}`);
+        } else {
+          console.log(`⚠️  No se pudo extraer ID del artículo, creando nuevo: ${title}`);
+          devtoArticle = await publishToDevTo(title, content, []);
+          console.log(`✅ Publicado (nuevo): ${title} -> ${devtoArticle.url}`);
+        }
+      } else {
+        // Crear nuevo artículo
+        console.log(`📝 Creando nuevo artículo: ${title}`);
+        devtoArticle = await publishToDevTo(title, content, []);
+        console.log(`✅ Publicado: ${title} -> ${devtoArticle.url}`);
+      }
       
       await updateNotionStatus(page.id, devtoArticle.url);
-      
-      console.log(`✅ Publicado: ${title} -> ${devtoArticle.url}`);
     }
     
-    console.log(`🎉 Proceso completado. ${pages.length} artículos publicados`);
+    console.log(`🎉 Proceso completado. ${pages.length} artículos procesados`);
   } catch (error) {
     console.error('❌ Error durante la publicación:', error.message);
     process.exit(1);
