@@ -1,0 +1,33 @@
+name: Publish Notion to Dev.to
+
+on:
+  # Trigger manual
+  workflow_dispatch:
+  
+  # Trigger automático diario a las 9:00 AM UTC
+  schedule:
+    - cron: '0 9 * * *'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Run publisher
+      env:
+        NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        DEVTO_API_KEY: ${{ secrets.DEVTO_API_KEY }}
+      run: npm start
