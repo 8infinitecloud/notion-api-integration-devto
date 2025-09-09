@@ -11,7 +11,7 @@ async function getNotionPages() {
     database_id: databaseId,
     filter: {
       property: 'Status',
-      status: { equals: 'Published' }
+      status: { equals: 'Done' }
     }
   });
   return response.results;
@@ -58,14 +58,14 @@ async function updateNotionStatus(pageId, devtoUrl) {
   await notion.pages.update({
     page_id: pageId,
     properties: {
-      'Status': { status: { name: 'Posted' } }
+      'Status': { status: { name: 'Published' } }
     }
   });
 }
 
 async function main() {
   try {
-    console.log('🔍 Buscando páginas con status "Published"...');
+    console.log('🔍 Buscando páginas con status "Done"...');
     const pages = await getNotionPages();
     
     if (pages.length === 0) {
