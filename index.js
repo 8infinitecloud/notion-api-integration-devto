@@ -226,23 +226,59 @@ function extractArticleIdFromUrl(devtoUrl) {
 }
 
 async function publishToDevTo(title, content, tags = []) {
+  // Validar que el título no esté vacío
+  if (!title || title.trim() === '' || title === 'Untitled') {
+    throw new Error('El título del artículo no puede estar vacío');
+  }
+
+  // Validar que el contenido no esté vacío
+  if (!content || content.trim() === '') {
+    throw new Error('El contenido del artículo no puede estar vacío');
+  }
+
   const article = {
     article: {
-      title,
-      body_markdown: content,
+      title: title.trim(),
+      body_markdown: content.trim(),
       published: false,
-      tags
+      tags: tags || []
     }
   };
 
-  const response = await axios.post('https://dev.to/api/articles', article, {
-    headers: {
-      'api-key': devtoApiKey,
-      'Content-Type': 'application/json'
-    }
-  });
+  try {
+    // Agregar delay para evitar rate limit
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    const response = await axios.post('https://dev.to/api/articles', article, {
+      headers: {
+        'api-key': devtoApiKey,
+        'Content-Type': 'application/json'
+      }
+    });
 
-  return response.data;
+    return response.data;
+  } catch (error) {
+    if (error.response?.status === 429) {
+      console.log('⏳ Rate limit alcanzado, esperando 30 segundos...');
+      await new Promise(resolve => setTimeout(resolve, 30000));
+      // Reintentar una vez
+      const response = await axios.post('https://dev.to/api/articles', article, {
+        headers: {
+          'api-key': devtoApiKey,
+          'Content-Type': 'application/json'
+        }
+      });
+      return response.data;
+    }
+    
+    console.error('❌ Error detallado de Dev.to:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      article: article
+    });
+    throw error;
+  }
 }
 
 async function updateDevToArticle(articleId, title, content, tags = []) {
@@ -287,7 +323,20 @@ async function main() {
     console.log(`📝 Encontradas ${pages.length} páginas para publicar`);
     
     for (const page of pages) {
-      const title = page.properties.Name?.title?.[0]?.plain_text || 'Untitled';
+      // Extraer título de la propiedad Name
+      let title = 'Untitled';
+      
+      if (page.properties.Name) {
+        const nameProp = page.properties.Name;
+        if (nameProp.title && nameProp.title.length > 0) {
+          title = nameProp.title.map(t => t.plain_text).join('').trim();
+        } else if (nameProp.rich_text && nameProp.rich_text.length > 0) {
+          title = nameProp.rich_text.map(t => t.plain_text).join('').trim();
+        } else if (nameProp.plain_text) {
+          title = nameProp.plain_text.trim();
+        }
+      }
+      
       const existingUrl = page.properties.URL?.url;
       
       console.log(`📤 Procesando: ${title}`);
