@@ -261,7 +261,7 @@ async function main() {
     console.log(`📝 Encontradas ${pages.length} páginas para publicar`);
     
     for (const page of pages) {
-      const title = page.properties.Title?.title?.[0]?.plain_text || 'Untitled';
+      const title = page.properties.Name?.title?.[0]?.plain_text || 'Untitled';
       const existingUrl = page.properties.URL?.url;
       
       console.log(`📤 Procesando: ${title}`);
